@@ -7,8 +7,7 @@ use crate::{
         entities::{session::SessionEntity, user::UserEntity},
         error::AccountError,
     },
-    error::AppError,
-    AppState,
+    core::{error::AppError, AppState},
 };
 
 pub const SESSION_HEADER_KEY: &'static str = "x-session-id";

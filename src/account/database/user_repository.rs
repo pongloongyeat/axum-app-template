@@ -2,8 +2,10 @@ use sqlx::SqliteConnection;
 
 use crate::{
     account::entities::user::{CreateUserEntity, FailedLoginAttempt, UserEntity},
-    error::{AppError, AppResult},
-    types::DbDateTime,
+    core::{
+        error::{AppError, AppResult},
+        types::DbDateTime,
+    },
 };
 
 pub async fn find_user_by_id(

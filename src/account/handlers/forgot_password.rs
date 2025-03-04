@@ -12,9 +12,11 @@ use crate::{
             response::forgot_password::VerifyOtpResponse,
         },
     },
-    error::{AppError, AppResult},
-    utils::extractors::AppJson,
-    AppState,
+    core::{
+        error::{AppError, AppResult},
+        extractors::AppJson,
+        AppState,
+    },
 };
 
 #[axum::debug_handler]

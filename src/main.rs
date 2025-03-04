@@ -1,4 +1,4 @@
-use unnamed::App;
+use unnamed::core::App;
 
 #[tokio::main]
 async fn main() {

@@ -14,10 +14,12 @@ use crate::{
         },
         utils::extractors::{CurrentUser, PossiblyExpiredSession},
     },
-    error::{AppError, AppResult},
-    types::DbDateTime,
-    utils::extractors::AppJson,
-    AppState,
+    core::{
+        error::{AppError, AppResult},
+        extractors::AppJson,
+        types::DbDateTime,
+        AppState,
+    },
 };
 
 #[axum::debug_handler]
@@ -163,7 +165,7 @@ mod validators {
 
     use crate::{
         account::{entities::user::UserEntity, error::AccountError},
-        error::{AppError, AppResult},
+        core::error::{AppError, AppResult},
     };
 
     pub async fn validate_user_password(password: &str, user_password: &str) -> AppResult<()> {

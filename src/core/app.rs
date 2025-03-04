@@ -9,9 +9,9 @@ use aide::{
 use axum::{response::IntoResponse, Extension, Router};
 use tokio::net::TcpListener;
 
-use crate::{account, utils::extractors::AppJson, AppConfig, AppState};
+use crate::account;
 
-pub const DEFAULT_SECURITY_SCHEME: &'static str = "Session ID";
+use super::{extractors::AppJson, AppConfig, AppState};
 
 pub struct App;
 
@@ -42,7 +42,7 @@ fn setup_router<R>(routers: Vec<R>) -> Router
 where
     R: Into<ApiRouter>,
 {
-    if crate::utils::should_add_openapi_routes() {
+    if super::utils::should_add_openapi_routes() {
         let mut api = OpenApi::default();
         let mut app: ApiRouter = ApiRouter::new();
 
@@ -83,7 +83,7 @@ async fn openapi_docs(Extension(api): Extension<Arc<OpenApi>>) -> impl IntoApiRe
 
 fn api_docs(docs: TransformOpenApi) -> TransformOpenApi {
     docs.security_scheme(
-        DEFAULT_SECURITY_SCHEME,
+        crate::core::constants::openapi::DEFAULT_SECURITY_SCHEME,
         SecurityScheme::ApiKey {
             location: ApiKeyLocation::Header,
             name: "X-Session-Id".into(),

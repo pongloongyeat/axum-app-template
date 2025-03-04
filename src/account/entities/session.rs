@@ -3,7 +3,7 @@ use derive_getters::Getters;
 use sqlx::prelude::Type;
 use uuid::Uuid;
 
-use crate::{types::DbDateTime, AppConfig};
+use crate::core::{types::DbDateTime, AppConfig};
 
 #[derive(Type)]
 pub enum RevocationReason {

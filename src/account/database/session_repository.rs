@@ -2,8 +2,10 @@ use sqlx::SqliteConnection;
 
 use crate::{
     account::entities::session::{CreateSessionEntity, RevocationReason, SessionEntity},
-    error::{AppError, AppResult},
-    types::DbDateTime,
+    core::{
+        error::{AppError, AppResult},
+        types::DbDateTime,
+    },
 };
 
 pub async fn find_session_by_token_ignoring_expiration(

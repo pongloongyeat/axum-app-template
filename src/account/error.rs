@@ -2,7 +2,7 @@ use axum::http::StatusCode;
 use strum::EnumIs;
 use thiserror::Error;
 
-use crate::error::{AppErrorResponse, ErrorCode, IntoAppErrorResponse};
+use crate::core::error::{AppErrorResponse, ErrorCode, IntoAppErrorResponse};
 
 #[derive(Error, Debug, EnumIs)]
 pub enum AccountError {
@@ -47,7 +47,7 @@ impl ErrorCode for AccountError {
 }
 
 impl IntoAppErrorResponse for AccountError {
-    fn into_app_error_response(&self) -> crate::error::AppErrorResponse {
+    fn into_app_error_response(&self) -> AppErrorResponse {
         match &self {
             AccountError::UserExistsByEmail(_)
             | AccountError::InvalidCredentials

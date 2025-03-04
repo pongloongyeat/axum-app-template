@@ -1,4 +1,4 @@
-use crate::types::DbDateTime;
+use crate::core::types::DbDateTime;
 
 pub struct UserEntity {
     pub id: i64,

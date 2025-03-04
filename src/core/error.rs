@@ -95,7 +95,7 @@ pub struct AppErrorResponse {
     pub code: String,
     pub message: String,
 
-    #[serde(skip_serializing_if = "crate::utils::is_prod")]
+    #[serde(skip_serializing_if = "super::utils::is_prod")]
     pub debug_description: Option<String>,
 }
 

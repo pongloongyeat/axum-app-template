@@ -2,8 +2,7 @@ use axum::extract::State;
 
 use crate::{
     account::{models::response::user::UserResponse, utils::extractors::CurrentUser},
-    utils::extractors::AppJson,
-    AppState,
+    core::{extractors::AppJson, AppState},
 };
 
 #[axum::debug_handler]

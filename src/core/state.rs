@@ -1,6 +1,6 @@
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 
-use crate::AppConfig;
+use super::AppConfig;
 
 #[derive(Clone)]
 pub struct AppState {

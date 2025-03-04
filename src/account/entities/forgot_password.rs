@@ -1,7 +1,7 @@
 use chrono::Utc;
 use uuid::Uuid;
 
-use crate::{types::DbDateTime, AppConfig};
+use crate::core::{types::DbDateTime, AppConfig};
 
 const DEFAULT_OTP_LENGTH: usize = 6;
 

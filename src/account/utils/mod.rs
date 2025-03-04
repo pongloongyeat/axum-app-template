@@ -1,7 +1,7 @@
 use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
 use rand::{rngs::OsRng, seq::SliceRandom};
 
-use crate::error::{AppError, AppResult};
+use crate::core::error::{AppError, AppResult};
 
 pub mod extractors;
 

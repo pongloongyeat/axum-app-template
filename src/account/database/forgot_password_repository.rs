@@ -4,8 +4,10 @@ use crate::{
     account::entities::forgot_password::{
         CreateForgotPasswordTransactionEntity, VerifyForgotPasswordTransaction,
     },
-    error::{AppError, AppResult},
-    types::DbDateTime,
+    core::{
+        error::{AppError, AppResult},
+        types::DbDateTime,
+    },
 };
 
 pub async fn request_otp(
