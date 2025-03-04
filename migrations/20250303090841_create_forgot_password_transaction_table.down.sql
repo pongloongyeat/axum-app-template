@@ -1,0 +1,1 @@
+DROP TABLE forgot_password_transactions;
