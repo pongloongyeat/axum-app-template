@@ -1,4 +1,5 @@
 use axum::{extract::State, response::NoContent};
+use serde_valid::Validate;
 
 use crate::{
     account::{
@@ -27,6 +28,8 @@ pub async fn register(
     State(state): State<AppState>,
     AppJson(request): AppJson<CreateUserRequest>,
 ) -> AppResult<AppJson<UserResponse>> {
+    request.validate().map_err(AppError::from)?;
+
     let email = request.email;
     let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
 

@@ -6,6 +6,7 @@ pub mod extractors;
 mod state;
 pub mod types;
 pub mod utils;
+pub mod validators;
 
 pub use app::*;
 pub use config::*;

@@ -20,6 +20,9 @@ pub enum AppError {
     #[error("{0}")]
     JsonDeserializeError(#[from] axum::extract::rejection::JsonRejection),
 
+    #[error("One or more validation errors has occured.")]
+    ValidationError(#[from] serde_valid::validation::Errors),
+
     #[error("{0}")]
     AccountError(#[from] crate::account::error::AccountError),
 }
@@ -37,10 +40,11 @@ impl From<argon2::password_hash::Error> for AppError {
 impl ErrorCode for AppError {
     fn code(&self) -> &str {
         match self {
-            AppError::SqlxError(_) => "GBL0001",
-            AppError::Argon2PasswordHashError(_) => "GBL0002",
-            AppError::HeaderToStrError(_) => "GBL0003",
-            AppError::JsonDeserializeError(_) => "GBL0004",
+            AppError::SqlxError(_) => "GBL9999",
+            AppError::Argon2PasswordHashError(_) => "GBL9998",
+            AppError::HeaderToStrError(_) => "GBL0001",
+            AppError::JsonDeserializeError(_) => "GBL0002",
+            AppError::ValidationError(_) => "GBL0003",
             AppError::AccountError(error) => error.code(),
         }
     }
@@ -54,24 +58,35 @@ impl IntoResponse for AppError {
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: Some(error.to_string()),
+                validation_errors: vec![],
             },
             AppError::Argon2PasswordHashError(error) => AppErrorResponse {
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: Some(error.to_string()),
+                validation_errors: vec![],
             },
             AppError::HeaderToStrError(error) => AppErrorResponse {
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                status_code: StatusCode::BAD_REQUEST,
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: Some(error.to_string()),
+                validation_errors: vec![],
             },
             AppError::JsonDeserializeError(error) => AppErrorResponse {
                 status_code: error.status(),
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: Some(error.to_string()),
+                validation_errors: vec![],
+            },
+            AppError::ValidationError(errors) => AppErrorResponse {
+                status_code: StatusCode::BAD_REQUEST,
+                code: self.code().into(),
+                message: self.to_string(),
+                debug_description: None,
+                validation_errors: AppValidationErrorResponse::from_errors(errors),
             },
             AppError::AccountError(error) => error.into_app_error_response(),
         }
@@ -97,6 +112,38 @@ pub struct AppErrorResponse {
 
     #[serde(skip_serializing_if = "super::utils::is_prod")]
     pub debug_description: Option<String>,
+
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub validation_errors: Vec<AppValidationErrorResponse>,
+}
+
+#[derive(Serialize, JsonSchema)]
+pub struct AppValidationErrorResponse {
+    pub property: String,
+    pub errors: Vec<String>,
+}
+
+impl AppValidationErrorResponse {
+    pub fn from_errors(errors: &serde_valid::validation::Errors) -> Vec<Self> {
+        match errors {
+            serde_valid::validation::Errors::Array(errors) => todo!(),
+            serde_valid::validation::Errors::Object(errors) => errors
+                .properties
+                .iter()
+                .map(|(key, value)| AppValidationErrorResponse {
+                    property: key.to_string(),
+                    errors: match value {
+                        serde_valid::validation::Errors::Array(errors) => todo!(),
+                        serde_valid::validation::Errors::Object(errors) => todo!(),
+                        serde_valid::validation::Errors::NewType(errors) => {
+                            errors.iter().map(|error| error.to_string()).collect()
+                        }
+                    },
+                })
+                .collect(),
+            serde_valid::validation::Errors::NewType(errors) => todo!(),
+        }
+    }
 }
 
 impl IntoResponse for AppErrorResponse {

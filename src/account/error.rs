@@ -57,6 +57,7 @@ impl IntoAppErrorResponse for AccountError {
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: None,
+                validation_errors: vec![],
             },
             AccountError::UserDoesNotExistByEmail(_) | AccountError::UserDoesNotExistById(_) => {
                 AppErrorResponse {
@@ -64,6 +65,7 @@ impl IntoAppErrorResponse for AccountError {
                     code: self.code().into(),
                     message: self.to_string(),
                     debug_description: None,
+                    validation_errors: vec![],
                 }
             }
             AccountError::MissingTokenInHeader => AppErrorResponse {
@@ -71,12 +73,14 @@ impl IntoAppErrorResponse for AccountError {
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: Some("Missing token (x-session-id) in header.".into()),
+                validation_errors: vec![],
             },
             AccountError::InvalidOrExpiredToken => AppErrorResponse {
                 status_code: StatusCode::UNAUTHORIZED,
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: None,
+                validation_errors: vec![],
             },
         }
     }
