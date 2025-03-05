@@ -12,6 +12,7 @@ pub async fn find_session_by_token_ignoring_expiration(
     connection: &mut SqliteConnection,
     token: &str,
 ) -> AppResult<Option<SessionEntity>> {
+    let now = DbDateTime::now();
     sqlx::query_as!(
         SessionEntity,
         r#"
@@ -26,9 +27,11 @@ pub async fn find_session_by_token_ignoring_expiration(
             revocation_reason as "revocation_reason!: Option<RevocationReason>"
         FROM sessions
         WHERE token = ?
+        AND ? > refresh_token_expiry
         AND revoked_at IS NULL
         "#,
-        token
+        token,
+        now
     )
     .fetch_optional(connection)
     .await

@@ -10,7 +10,7 @@ use crate::{
         },
         error::AccountError,
         models::{
-            request::auth::{AuthenticateRequest, CreateUserRequest},
+            request::auth::{AuthenticateRequest, CreateUserRequest, ExtendSessionRequest},
             response::{auth::AuthenticatedResponse, user::UserResponse},
         },
         utils::extractors::{CurrentUser, PossiblyExpiredSession},
@@ -116,7 +116,14 @@ pub async fn login(
 pub async fn extend_session(
     State(state): State<AppState>,
     PossiblyExpiredSession(session): PossiblyExpiredSession,
+    AppJson(request): AppJson<ExtendSessionRequest>,
 ) -> AppResult<AppJson<AuthenticatedResponse>> {
+    request.validate().map_err(AppError::from)?;
+
+    if session.refresh_token != request.refresh_token {
+        return Err(AppError::AccountError(AccountError::TokenPairMismatch));
+    }
+
     let new_session = CreateSessionEntity::new(state.config);
     let mut connection = state.pool.begin().await.map_err(AppError::from)?;
     let Some(user) = user_repository::find_user_by_id(&mut connection, session.user_id).await?

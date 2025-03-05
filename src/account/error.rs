@@ -29,6 +29,9 @@ pub enum AccountError {
 
     #[error("OTP is invalid or expired.")]
     InvalidOrExpiredOtp,
+
+    #[error("Session and refresh tokens do not match.")]
+    TokenPairMismatch,
 }
 
 impl ErrorCode for AccountError {
@@ -42,6 +45,7 @@ impl ErrorCode for AccountError {
             AccountError::MissingTokenInHeader => "ACC0006",
             AccountError::InvalidOrExpiredToken => "ACC0007",
             AccountError::InvalidOrExpiredOtp => "ACC0008",
+            AccountError::TokenPairMismatch => "ACC0009",
         }
     }
 }
@@ -76,6 +80,13 @@ impl IntoAppErrorResponse for AccountError {
                 validation_errors: vec![],
             },
             AccountError::InvalidOrExpiredToken => AppErrorResponse {
+                status_code: StatusCode::UNAUTHORIZED,
+                code: self.code().into(),
+                message: self.to_string(),
+                debug_description: None,
+                validation_errors: vec![],
+            },
+            AccountError::TokenPairMismatch => AppErrorResponse {
                 status_code: StatusCode::UNAUTHORIZED,
                 code: self.code().into(),
                 message: self.to_string(),
