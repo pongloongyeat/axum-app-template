@@ -2,12 +2,14 @@ use std::{env, fmt::Debug, str::FromStr};
 
 use chrono::Duration;
 use strum::{Display, EnumIs, EnumString};
+use tracing::log::LevelFilter;
 
 #[derive(Clone)]
 pub struct AppConfig {
     pub host: String,
     pub port: String,
     pub db_url: String,
+    pub sql_log_level: LevelFilter,
     pub session_duration: Duration,
     pub session_refresh_duration: Duration,
     pub otp_validity_duration: Duration,
@@ -41,7 +43,9 @@ impl AppConfig {
 
         let host = get_env("HOST");
         let port = get_env("PORT");
+
         let db_url = get_env("DATABASE_URL");
+        let sql_log_level = get_env("SQL_LOG_LEVEL");
 
         let session_duration = get_env("SESSION_DURATION");
         let session_duration = Duration::seconds(session_duration);
@@ -56,6 +60,7 @@ impl AppConfig {
             host,
             port,
             db_url,
+            sql_log_level,
             session_duration,
             session_refresh_duration,
             otp_validity_duration,

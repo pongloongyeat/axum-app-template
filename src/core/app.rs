@@ -32,6 +32,7 @@ impl App {
 
         let app = setup_router(vec![account::router(state)]);
 
+        tracing::info!("Serving app at {address}");
         axum::serve(listener, app.into_make_service())
             .await
             .expect("Failed to serve app");
