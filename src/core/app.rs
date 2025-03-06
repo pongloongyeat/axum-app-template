@@ -11,7 +11,7 @@ use tokio::net::TcpListener;
 
 use crate::account;
 
-use super::{extractors::AppJson, AppConfig, AppState};
+use super::{extractors::JsonResponse, AppConfig, AppState};
 
 pub struct App;
 
@@ -79,7 +79,7 @@ fn openapi_route() -> ApiRouter {
 
 #[axum::debug_handler]
 async fn openapi_docs(Extension(api): Extension<Arc<OpenApi>>) -> impl IntoApiResponse {
-    AppJson(api).into_response()
+    JsonResponse(api).into_response()
 }
 
 fn api_docs(docs: TransformOpenApi) -> TransformOpenApi {

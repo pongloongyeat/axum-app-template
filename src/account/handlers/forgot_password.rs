@@ -14,7 +14,7 @@ use crate::{
     },
     core::{
         error::{AppError, AppResult},
-        extractors::AppJson,
+        extractors::{JsonRequest, JsonResponse},
         AppState,
     },
 };
@@ -22,7 +22,7 @@ use crate::{
 #[axum::debug_handler]
 pub async fn request_otp(
     State(state): State<AppState>,
-    AppJson(request): AppJson<RequestOtpRequest>,
+    JsonRequest(request): JsonRequest<RequestOtpRequest>,
 ) -> AppResult<()> {
     let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
     let email = request.email;
@@ -44,8 +44,8 @@ pub async fn request_otp(
 #[axum::debug_handler]
 pub async fn verify_otp(
     State(state): State<AppState>,
-    AppJson(request): AppJson<VerifyOtpRequest>,
-) -> AppResult<AppJson<VerifyOtpResponse>> {
+    JsonRequest(request): JsonRequest<VerifyOtpRequest>,
+) -> AppResult<JsonResponse<VerifyOtpResponse>> {
     let email = request.email;
     let token = request.otp;
 
@@ -63,7 +63,7 @@ pub async fn verify_otp(
     if let Some(verification_token) =
         forgot_password_repository::verify_otp_request(&mut connection, transaction).await?
     {
-        Ok(AppJson(VerifyOtpResponse {
+        Ok(JsonResponse(VerifyOtpResponse {
             token: verification_token,
         }))
     } else {
@@ -74,7 +74,7 @@ pub async fn verify_otp(
 #[axum::debug_handler]
 pub async fn reset_password(
     State(state): State<AppState>,
-    AppJson(request): AppJson<ResetPasswordRequest>,
+    JsonRequest(request): JsonRequest<ResetPasswordRequest>,
 ) -> AppResult<NoContent> {
     let token = request.token;
     let password = request.password;

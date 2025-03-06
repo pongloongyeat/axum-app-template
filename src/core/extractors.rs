@@ -2,12 +2,13 @@ use aide::{OperationInput, OperationOutput};
 use axum::{extract::FromRequest, response::IntoResponse, Json};
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Serialize};
+use serde_valid::Validate;
 
 use super::error::AppError;
 
-pub struct AppJson<T>(pub T);
+pub struct JsonRequest<T>(pub T);
 
-impl<T, S> FromRequest<S> for AppJson<T>
+impl<T, S> FromRequest<S> for JsonRequest<T>
 where
     T: DeserializeOwned,
     S: Send + Sync,
@@ -17,21 +18,12 @@ where
     async fn from_request(req: axum::extract::Request, state: &S) -> Result<Self, Self::Rejection> {
         <Json<T> as FromRequest<S>>::from_request(req, state)
             .await
-            .map(|json| AppJson(json.0))
+            .map(|json| JsonRequest(json.0))
             .map_err(AppError::from)
     }
 }
 
-impl<T> IntoResponse for AppJson<T>
-where
-    T: Serialize,
-{
-    fn into_response(self) -> axum::response::Response {
-        Json(self.0).into_response()
-    }
-}
-
-impl<T> OperationInput for AppJson<T>
+impl<T> OperationInput for JsonRequest<T>
 where
     T: JsonSchema,
 {
@@ -43,7 +35,50 @@ where
     }
 }
 
-impl<T> OperationOutput for AppJson<T>
+pub struct ValidJsonRequest<T>(pub T);
+
+impl<T, S> FromRequest<S> for ValidJsonRequest<T>
+where
+    T: Validate + DeserializeOwned,
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    async fn from_request(req: axum::extract::Request, state: &S) -> Result<Self, Self::Rejection> {
+        let json = <Json<T> as FromRequest<S>>::from_request(req, state)
+            .await
+            .map(|json| json.0)
+            .map_err(AppError::from)?;
+        json.validate().map_err(AppError::from)?;
+
+        Ok(ValidJsonRequest(json))
+    }
+}
+
+impl<T> OperationInput for ValidJsonRequest<T>
+where
+    T: JsonSchema,
+{
+    fn operation_input(
+        ctx: &mut aide::generate::GenContext,
+        operation: &mut aide::openapi::Operation,
+    ) {
+        <Json<T> as OperationInput>::operation_input(ctx, operation);
+    }
+}
+
+pub struct JsonResponse<T>(pub T);
+
+impl<T> IntoResponse for JsonResponse<T>
+where
+    T: Serialize,
+{
+    fn into_response(self) -> axum::response::Response {
+        Json(self.0).into_response()
+    }
+}
+
+impl<T> OperationOutput for JsonResponse<T>
 where
     T: JsonSchema,
 {

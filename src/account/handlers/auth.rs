@@ -1,5 +1,4 @@
 use axum::{extract::State, response::NoContent};
-use serde_valid::Validate;
 
 use crate::{
     account::{
@@ -17,7 +16,7 @@ use crate::{
     },
     core::{
         error::{AppError, AppResult},
-        extractors::AppJson,
+        extractors::{JsonRequest, JsonResponse, ValidJsonRequest},
         types::DbDateTime,
         AppState,
     },
@@ -26,10 +25,8 @@ use crate::{
 #[axum::debug_handler]
 pub async fn register(
     State(state): State<AppState>,
-    AppJson(request): AppJson<CreateUserRequest>,
-) -> AppResult<AppJson<UserResponse>> {
-    request.validate().map_err(AppError::from)?;
-
+    ValidJsonRequest(request): ValidJsonRequest<CreateUserRequest>,
+) -> AppResult<JsonResponse<UserResponse>> {
     let email = request.email;
     let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
 
@@ -50,14 +47,14 @@ pub async fn register(
     user_repository::create_user(&mut connection, user)
         .await
         .map(UserResponse::from)
-        .map(AppJson)
+        .map(JsonResponse)
 }
 
 #[axum::debug_handler]
 pub async fn login(
     State(state): State<AppState>,
-    AppJson(request): AppJson<AuthenticateRequest>,
-) -> AppResult<AppJson<AuthenticatedResponse>> {
+    JsonRequest(request): JsonRequest<AuthenticateRequest>,
+) -> AppResult<JsonResponse<AuthenticatedResponse>> {
     let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
     let email = request.email;
 
@@ -103,7 +100,7 @@ pub async fn login(
 
     connection.commit().await.map_err(AppError::from)?;
 
-    Ok(AppJson(AuthenticatedResponse {
+    Ok(JsonResponse(AuthenticatedResponse {
         session_token: session.token,
         refresh_token: session.refresh_token,
         session_token_expiry: session.token_expiry.into(),
@@ -116,10 +113,8 @@ pub async fn login(
 pub async fn extend_session(
     State(state): State<AppState>,
     PossiblyExpiredSession(session): PossiblyExpiredSession,
-    AppJson(request): AppJson<ExtendSessionRequest>,
-) -> AppResult<AppJson<AuthenticatedResponse>> {
-    request.validate().map_err(AppError::from)?;
-
+    ValidJsonRequest(request): ValidJsonRequest<ExtendSessionRequest>,
+) -> AppResult<JsonResponse<AuthenticatedResponse>> {
     if session.refresh_token != request.refresh_token {
         return Err(AppError::AccountError(AccountError::TokenPairMismatch));
     }
@@ -144,7 +139,7 @@ pub async fn extend_session(
 
     connection.commit().await.map_err(AppError::from)?;
 
-    Ok(AppJson(AuthenticatedResponse {
+    Ok(JsonResponse(AuthenticatedResponse {
         session_token: session.token,
         refresh_token: session.refresh_token,
         session_token_expiry: session.token_expiry.into(),
