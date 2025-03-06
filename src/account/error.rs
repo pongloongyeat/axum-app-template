@@ -2,7 +2,10 @@ use axum::http::StatusCode;
 use strum::EnumIs;
 use thiserror::Error;
 
-use crate::core::error::{AppErrorResponse, ErrorCode, IntoAppErrorResponse};
+use crate::core::{
+    constants::session::headers::SESSION_HEADER_KEY,
+    error::{AppErrorResponse, ErrorCode, IntoAppErrorResponse},
+};
 
 #[derive(Error, Debug, EnumIs)]
 pub enum AccountError {
@@ -76,7 +79,10 @@ impl IntoAppErrorResponse for AccountError {
                 status_code: StatusCode::UNAUTHORIZED,
                 code: self.code().into(),
                 message: self.to_string(),
-                debug_description: Some("Missing token (x-session-id) in header.".into()),
+                debug_description: Some(format!(
+                    "Missing token ({}) in header.",
+                    SESSION_HEADER_KEY
+                )),
                 validation_errors: vec![],
             },
             AccountError::InvalidOrExpiredToken => AppErrorResponse {

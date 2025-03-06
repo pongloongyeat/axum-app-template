@@ -7,3 +7,9 @@ pub mod openapi {
         pub const USER_TAG: &'static str = "Users";
     }
 }
+
+pub mod session {
+    pub mod headers {
+        pub const SESSION_HEADER_KEY: &'static str = "X-Session-Id";
+    }
+}

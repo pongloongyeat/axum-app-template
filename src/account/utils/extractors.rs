@@ -7,10 +7,8 @@ use crate::{
         entities::{session::SessionEntity, user::UserEntity},
         error::AccountError,
     },
-    core::{error::AppError, AppState},
+    core::{constants::session::headers::SESSION_HEADER_KEY, error::AppError, AppState},
 };
-
-pub const SESSION_HEADER_KEY: &'static str = "x-session-id";
 
 pub struct PossiblyExpiredSession(pub SessionEntity);
 

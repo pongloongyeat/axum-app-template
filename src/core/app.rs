@@ -87,7 +87,7 @@ fn api_docs(docs: TransformOpenApi) -> TransformOpenApi {
         crate::core::constants::openapi::DEFAULT_SECURITY_SCHEME,
         SecurityScheme::ApiKey {
             location: ApiKeyLocation::Header,
-            name: "X-Session-Id".into(),
+            name: super::constants::session::headers::SESSION_HEADER_KEY.into(),
             description: None,
             extensions: Default::default(),
         },
