@@ -14,7 +14,7 @@ use crate::{
     },
     core::{
         error::{AppError, AppResult},
-        extractors::{JsonRequest, JsonResponse},
+        extractors::{JsonRequest, JsonResponse, ValidJsonRequest},
         AppState,
     },
 };
@@ -74,7 +74,7 @@ pub async fn verify_otp(
 #[axum::debug_handler]
 pub async fn reset_password(
     State(state): State<AppState>,
-    JsonRequest(request): JsonRequest<ResetPasswordRequest>,
+    ValidJsonRequest(request): ValidJsonRequest<ResetPasswordRequest>,
 ) -> AppResult<NoContent> {
     let token = request.token;
     let password = request.password;

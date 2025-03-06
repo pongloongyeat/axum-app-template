@@ -9,8 +9,6 @@ use crate::core::validators;
 pub struct AuthenticateRequest {
     #[validate(custom = validators::is_email_valid)]
     pub email: String,
-
-    #[validate(custom = validators::is_password_valid)]
     pub password: String,
 }
 

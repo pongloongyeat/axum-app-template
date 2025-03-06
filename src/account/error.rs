@@ -35,6 +35,9 @@ pub enum AccountError {
 
     #[error("Session and refresh tokens do not match.")]
     TokenPairMismatch,
+
+    #[error("Insufficient privilege to access this resource.")]
+    InsufficientPrivilege,
 }
 
 impl ErrorCode for AccountError {
@@ -49,6 +52,7 @@ impl ErrorCode for AccountError {
             AccountError::InvalidOrExpiredToken => "ACC0007",
             AccountError::InvalidOrExpiredOtp => "ACC0008",
             AccountError::TokenPairMismatch => "ACC0009",
+            AccountError::InsufficientPrivilege => "ACC0010",
         }
     }
 }
@@ -94,6 +98,13 @@ impl IntoAppErrorResponse for AccountError {
             },
             AccountError::TokenPairMismatch => AppErrorResponse {
                 status_code: StatusCode::UNAUTHORIZED,
+                code: self.code().into(),
+                message: self.to_string(),
+                debug_description: None,
+                validation_errors: vec![],
+            },
+            AccountError::InsufficientPrivilege => AppErrorResponse {
+                status_code: StatusCode::FORBIDDEN,
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: None,

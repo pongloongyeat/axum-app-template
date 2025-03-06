@@ -16,7 +16,7 @@ use crate::{
     },
     core::{
         error::{AppError, AppResult},
-        extractors::{JsonRequest, JsonResponse, ValidJsonRequest},
+        extractors::{JsonResponse, ValidJsonRequest},
         types::DbDateTime,
         AppState,
     },
@@ -53,7 +53,7 @@ pub async fn register(
 #[axum::debug_handler]
 pub async fn login(
     State(state): State<AppState>,
-    JsonRequest(request): JsonRequest<AuthenticateRequest>,
+    ValidJsonRequest(request): ValidJsonRequest<AuthenticateRequest>,
 ) -> AppResult<JsonResponse<AuthenticatedResponse>> {
     let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
     let email = request.email;

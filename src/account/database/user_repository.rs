@@ -1,9 +1,10 @@
 use sqlx::SqliteConnection;
 
 use crate::{
-    account::entities::user::{CreateUserEntity, FailedLoginAttempt, UserEntity},
+    account::entities::user::{CreateUserEntity, FailedLoginAttempt, UserEntity, UserRole},
     core::{
         error::{AppError, AppResult},
+        models::{Page, PageRequest},
         types::DbDateTime,
     },
 };
@@ -19,6 +20,7 @@ pub async fn find_user_by_id(
             u.id,
             u.email,
             u.password,
+            u.role as "role: UserRole",
             u.login_attempts,
             u.last_failed_login_attempt as "last_failed_login_attempt!: Option<DbDateTime>"
         FROM users u
@@ -42,6 +44,7 @@ pub async fn find_user_by_email(
             u.id,
             u.email,
             u.password,
+            u.role as "role: UserRole",
             u.login_attempts,
             u.last_failed_login_attempt as "last_failed_login_attempt!: Option<DbDateTime>"
         FROM users u
@@ -66,6 +69,7 @@ pub async fn find_user_by_token(
             u.id,
             u.email,
             u.password,
+            u.role as "role: UserRole",
             u.login_attempts,
             u.last_failed_login_attempt as "last_failed_login_attempt!: Option<DbDateTime>"
         FROM sessions s
@@ -80,6 +84,46 @@ pub async fn find_user_by_token(
     .fetch_optional(connection)
     .await
     .map_err(AppError::from)
+}
+
+pub async fn find_paginated_users(
+    connection: &mut SqliteConnection,
+    request: PageRequest,
+) -> AppResult<Page<UserEntity>> {
+    let take = request.take as i64;
+    let skip = request.skip as i64;
+    let users = sqlx::query_as!(
+        UserEntity,
+        r#"
+        SELECT
+            u.id,
+            u.email,
+            u.password,
+            u.role as "role!: UserRole",
+            u.login_attempts,
+            u.last_failed_login_attempt as "last_failed_login_attempt!: Option<DbDateTime>"
+        FROM users u
+        LIMIT ?
+        OFFSET ?
+        "#,
+        take,
+        skip,
+    )
+    .fetch_all(&mut *connection)
+    .await
+    .map_err(AppError::from)?;
+
+    let count = sqlx::query!("SELECT COUNT(1) as count FROM users")
+        .fetch_one(connection)
+        .await
+        .map(|result| result.count as u64)
+        .map_err(AppError::from)?;
+
+    Ok(Page {
+        content: users,
+        total: count,
+        request,
+    })
 }
 
 pub async fn user_exists_by_email(
@@ -109,6 +153,7 @@ pub async fn create_user(
             id,
             email,
             password,
+            role as "role!: UserRole",
             login_attempts,
             last_failed_login_attempt as "last_failed_login_attempt!: Option<DbDateTime>"
         "#,

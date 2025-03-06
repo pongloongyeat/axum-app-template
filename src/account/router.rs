@@ -5,7 +5,7 @@ use aide::axum::{
 
 use crate::core::{
     constants::openapi::{
-        tags::{AUTH_TAG, FORGOT_PASSWORD_TAG, USER_TAG},
+        tags::{admin, AUTH_TAG, FORGOT_PASSWORD_TAG, USER_TAG},
         DEFAULT_SECURITY_SCHEME,
     },
     AppState,
@@ -59,6 +59,17 @@ pub fn router(state: AppState) -> ApiRouter {
                     get(handlers::user::get_current_user),
                     |op| {
                         op.tag(USER_TAG)
+                            .security_requirement(DEFAULT_SECURITY_SCHEME)
+                    },
+                ),
+            )
+            .nest(
+                "/admin/users",
+                ApiRouter::new().api_route_with(
+                    "/",
+                    get(handlers::user::admin::get_paginated_users),
+                    |op| {
+                        op.tag(admin::USER_TAG)
                             .security_requirement(DEFAULT_SECURITY_SCHEME)
                     },
                 ),

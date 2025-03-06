@@ -5,6 +5,10 @@ pub mod openapi {
         pub const AUTH_TAG: &'static str = "Auth";
         pub const FORGOT_PASSWORD_TAG: &'static str = "Forgot Password";
         pub const USER_TAG: &'static str = "Users";
+
+        pub mod admin {
+            pub const USER_TAG: &'static str = "Users (Admin)";
+        }
     }
 }
 
