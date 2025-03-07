@@ -119,11 +119,7 @@ pub async fn find_paginated_users(
         .map(|result| result.count as u64)
         .map_err(AppError::from)?;
 
-    Ok(Page {
-        content: users,
-        total: count,
-        request,
-    })
+    Ok(Page::new(users, count, request))
 }
 
 pub async fn user_exists_by_email(
