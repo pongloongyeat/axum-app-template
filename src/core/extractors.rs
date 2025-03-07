@@ -2,9 +2,8 @@ use aide::{OperationInput, OperationOutput};
 use axum::{extract::FromRequest, response::IntoResponse, Json};
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Serialize};
-use serde_valid::Validate;
 
-use super::error::AppError;
+use super::{error::AppError, validators::Validatable};
 
 pub struct JsonRequest<T>(pub T);
 
@@ -39,7 +38,7 @@ pub struct ValidJsonRequest<T>(pub T);
 
 impl<T, S> FromRequest<S> for ValidJsonRequest<T>
 where
-    T: Validate + DeserializeOwned,
+    T: Validatable + DeserializeOwned,
     S: Send + Sync,
 {
     type Rejection = AppError;

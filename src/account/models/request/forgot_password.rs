@@ -1,8 +1,7 @@
 use schemars::JsonSchema;
 use serde::Deserialize;
-use serde_valid::Validate;
 
-use crate::core::validators;
+use crate::core::validators::{self, Validatable};
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -17,11 +16,24 @@ pub struct VerifyOtpRequest {
     pub otp: String,
 }
 
-#[derive(Deserialize, Validate, JsonSchema)]
+#[derive(Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ResetPasswordRequest {
     pub token: String,
 
     #[validate(custom = validators::is_password_valid)]
     pub password: String,
+}
+
+impl Validatable for ResetPasswordRequest {
+    fn validated_properties() -> Vec<String> {
+        vec!["password".into()]
+    }
+
+    fn validate_property(&self, property: &str) -> Option<Vec<String>> {
+        match property {
+            "password" => validators::is_password_valid(&self.password),
+            _ => None,
+        }
+    }
 }

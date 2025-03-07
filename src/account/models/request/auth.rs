@@ -1,31 +1,52 @@
 use schemars::JsonSchema;
 use serde::Deserialize;
-use serde_valid::Validate;
 
-use crate::core::validators;
+use crate::core::validators::{self, Validatable};
 
-#[derive(Deserialize, Validate, JsonSchema)]
+#[derive(Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticateRequest {
-    #[validate(custom = validators::is_email_valid)]
     pub email: String,
     pub password: String,
 }
 
-#[derive(Deserialize, Validate, JsonSchema)]
+impl Validatable for AuthenticateRequest {
+    fn validated_properties() -> Vec<String> {
+        vec!["email".into(), "password".into()]
+    }
+
+    fn validate_property(&self, property: &str) -> Option<Vec<String>> {
+        match property {
+            "email" => validators::is_email_valid(&self.email),
+            "password" => validators::is_password_valid(&self.password),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateUserRequest {
-    #[validate(custom = validators::is_email_valid)]
     pub email: String,
-
-    #[validate(custom = validators::is_password_valid)]
     pub password: String,
 }
 
-#[derive(Deserialize, Validate, JsonSchema)]
+impl Validatable for CreateUserRequest {
+    fn validated_properties() -> Vec<String> {
+        vec!["email".into(), "password".into()]
+    }
+
+    fn validate_property(&self, property: &str) -> Option<Vec<String>> {
+        match property {
+            "email" => validators::is_email_valid(&self.email),
+            "password" => validators::is_password_valid(&self.password),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ExtendSessionRequest {
-    #[validate(min_length = 36)]
-    #[validate(max_length = 36)]
     pub refresh_token: String,
 }

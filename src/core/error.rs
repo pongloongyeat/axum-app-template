@@ -21,7 +21,7 @@ pub enum AppError {
     JsonDeserializeError(#[from] axum::extract::rejection::JsonRejection),
 
     #[error("One or more validation errors has occured.")]
-    ValidationError(#[from] serde_valid::validation::Errors),
+    ValidationError(Vec<crate::core::validators::ValidationError>),
 
     #[error("{0}")]
     AccountError(#[from] crate::account::error::AccountError),
@@ -34,6 +34,12 @@ pub trait ErrorCode {
 impl From<argon2::password_hash::Error> for AppError {
     fn from(value: argon2::password_hash::Error) -> Self {
         AppError::Argon2PasswordHashError(value)
+    }
+}
+
+impl From<Vec<crate::core::validators::ValidationError>> for AppError {
+    fn from(value: Vec<crate::core::validators::ValidationError>) -> Self {
+        AppError::ValidationError(value)
     }
 }
 
@@ -123,26 +129,21 @@ pub struct AppValidationErrorResponse {
     pub errors: Vec<String>,
 }
 
-impl AppValidationErrorResponse {
-    pub fn from_errors(errors: &serde_valid::validation::Errors) -> Vec<Self> {
-        match errors {
-            serde_valid::validation::Errors::Array(errors) => todo!(),
-            serde_valid::validation::Errors::Object(errors) => errors
-                .properties
-                .iter()
-                .map(|(key, value)| AppValidationErrorResponse {
-                    property: key.to_string(),
-                    errors: match value {
-                        serde_valid::validation::Errors::Array(errors) => todo!(),
-                        serde_valid::validation::Errors::Object(errors) => todo!(),
-                        serde_valid::validation::Errors::NewType(errors) => {
-                            errors.iter().map(|error| error.to_string()).collect()
-                        }
-                    },
-                })
-                .collect(),
-            serde_valid::validation::Errors::NewType(errors) => todo!(),
+impl From<crate::core::validators::ValidationError> for AppValidationErrorResponse {
+    fn from(value: crate::core::validators::ValidationError) -> Self {
+        Self {
+            property: value.property,
+            errors: value.errors,
         }
+    }
+}
+
+impl AppValidationErrorResponse {
+    pub fn from_errors(errors: &Vec<crate::core::validators::ValidationError>) -> Vec<Self> {
+        errors
+            .iter()
+            .map(|error| AppValidationErrorResponse::from(error.to_owned()))
+            .collect()
     }
 }
 

@@ -16,7 +16,7 @@ use crate::{
     },
     core::{
         error::{AppError, AppResult},
-        extractors::{JsonResponse, ValidJsonRequest},
+        extractors::{JsonRequest, JsonResponse, ValidJsonRequest},
         types::DbDateTime,
         AppState,
     },
@@ -113,7 +113,7 @@ pub async fn login(
 pub async fn extend_session(
     State(state): State<AppState>,
     PossiblyExpiredSession(session): PossiblyExpiredSession,
-    ValidJsonRequest(request): ValidJsonRequest<ExtendSessionRequest>,
+    JsonRequest(request): JsonRequest<ExtendSessionRequest>,
 ) -> AppResult<JsonResponse<AuthenticatedResponse>> {
     if session.refresh_token != request.refresh_token {
         return Err(AppError::AccountError(AccountError::TokenPairMismatch));
