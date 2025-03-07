@@ -17,3 +17,7 @@ pub mod session {
         pub const SESSION_HEADER_KEY: &'static str = "X-Session-Id";
     }
 }
+
+pub mod admin {
+    pub const ADMIN_EMAIL: &'static str = "admin@localhost";
+}

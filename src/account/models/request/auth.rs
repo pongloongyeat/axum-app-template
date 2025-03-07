@@ -1,7 +1,10 @@
 use schemars::JsonSchema;
 use serde::Deserialize;
 
-use crate::core::validators::{self, Validatable};
+use crate::core::{
+    constants::admin::ADMIN_EMAIL,
+    validators::{self, Validatable},
+};
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -18,7 +21,13 @@ impl Validatable for AuthenticateRequest {
     fn validate_property(&self, property: &str) -> Option<Vec<String>> {
         match property {
             "email" => validators::is_email_valid(&self.email),
-            "password" => validators::is_password_valid(&self.password),
+            "password" => {
+                if self.email == ADMIN_EMAIL {
+                    None
+                } else {
+                    validators::is_password_valid(&self.password)
+                }
+            }
             _ => None,
         }
     }
