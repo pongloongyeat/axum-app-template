@@ -39,7 +39,7 @@ pub mod admin {
         let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
         user_repository::find_paginated_users(&mut connection, request)
             .await
-            .map(|users| users.map(|user| UserResponse::from(user.to_owned())))
+            .map(|users| users.map(|user| user.to_owned().into()))
             .map(JsonResponse)
     }
 }

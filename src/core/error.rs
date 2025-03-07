@@ -140,10 +140,7 @@ impl From<crate::core::validators::ValidationError> for AppValidationErrorRespon
 
 impl AppValidationErrorResponse {
     pub fn from_errors(errors: &Vec<crate::core::validators::ValidationError>) -> Vec<Self> {
-        errors
-            .iter()
-            .map(|error| AppValidationErrorResponse::from(error.to_owned()))
-            .collect()
+        errors.iter().map(|error| error.to_owned().into()).collect()
     }
 }
 
