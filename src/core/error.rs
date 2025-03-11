@@ -17,13 +17,13 @@ pub enum AppError {
     #[error("An unknown error has occured.")]
     HeaderToStrError(#[from] axum::http::header::ToStrError),
 
-    #[error("{0}")]
+    #[error(transparent)]
     JsonDeserializeError(#[from] axum::extract::rejection::JsonRejection),
 
     #[error("One or more validation errors has occured.")]
     ValidationError(Vec<crate::core::validators::ValidationError>),
 
-    #[error("{0}")]
+    #[error(transparent)]
     AccountError(#[from] crate::account::error::AccountError),
 }
 
