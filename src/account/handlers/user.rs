@@ -5,7 +5,6 @@ use crate::{
     core::{extractors::JsonResponse, AppState},
 };
 
-#[axum::debug_handler]
 pub async fn get_current_user(
     State(_): State<AppState>,
     CurrentUser(user): CurrentUser,
@@ -23,7 +22,7 @@ pub mod admin {
             utils::extractors::{Admin, CurrentRole},
         },
         core::{
-            error::{ApiResult, ApiError},
+            error::{ApiError, ApiResult},
             extractors::JsonResponse,
             models::{Page, PageRequest},
             AppState,

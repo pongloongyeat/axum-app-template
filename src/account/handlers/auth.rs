@@ -15,7 +15,7 @@ use crate::{
         utils::extractors::{CurrentUser, PossiblyExpiredSession},
     },
     core::{
-        error::{ApiError, AppResult},
+        error::{ApiError, ApiResult},
         extractors::{JsonRequest, JsonResponse, ValidJsonRequest},
         types::DbDateTime,
         AppState,
@@ -26,7 +26,7 @@ use crate::{
 pub async fn register(
     State(state): State<AppState>,
     ValidJsonRequest(request): ValidJsonRequest<CreateUserRequest>,
-) -> AppResult<JsonResponse<UserResponse>> {
+) -> ApiResult<JsonResponse<UserResponse>> {
     let email = request.email;
     let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
 
@@ -54,7 +54,7 @@ pub async fn register(
 pub async fn login(
     State(state): State<AppState>,
     ValidJsonRequest(request): ValidJsonRequest<AuthenticateRequest>,
-) -> AppResult<JsonResponse<AuthenticatedResponse>> {
+) -> ApiResult<JsonResponse<AuthenticatedResponse>> {
     let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
     let email = request.email;
 
@@ -114,7 +114,7 @@ pub async fn extend_session(
     State(state): State<AppState>,
     PossiblyExpiredSession(session): PossiblyExpiredSession,
     JsonRequest(request): JsonRequest<ExtendSessionRequest>,
-) -> AppResult<JsonResponse<AuthenticatedResponse>> {
+) -> ApiResult<JsonResponse<AuthenticatedResponse>> {
     if session.refresh_token != request.refresh_token {
         return Err(ApiError::AccountError(AccountError::TokenPairMismatch));
     }
@@ -152,7 +152,7 @@ pub async fn extend_session(
 pub async fn logout(
     State(state): State<AppState>,
     CurrentUser(user): CurrentUser,
-) -> AppResult<NoContent> {
+) -> ApiResult<NoContent> {
     let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
 
     session_repository::revoke_session_for_user_id(
@@ -170,10 +170,10 @@ mod validators {
 
     use crate::{
         account::{entities::user::UserEntity, error::AccountError},
-        core::error::{ApiError, AppResult},
+        core::error::{ApiError, ApiResult},
     };
 
-    pub async fn validate_user_password(password: &str, user_password: &str) -> AppResult<()> {
+    pub async fn validate_user_password(password: &str, user_password: &str) -> ApiResult<()> {
         let argon2 = Argon2::default();
         let hash = PasswordHash::new(user_password).map_err(ApiError::from)?;
 
@@ -189,7 +189,7 @@ mod validators {
         Ok(())
     }
 
-    pub fn validate_max_login_attempts(user: &UserEntity) -> AppResult<()> {
+    pub fn validate_max_login_attempts(user: &UserEntity) -> ApiResult<()> {
         if user.login_attempts >= 3 {
             Err(ApiError::AccountError(AccountError::MaxLoginAttempts))
         } else {
