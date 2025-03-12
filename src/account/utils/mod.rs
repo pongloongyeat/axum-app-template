@@ -1,19 +1,19 @@
 use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
 use rand::{rngs::OsRng, seq::SliceRandom};
 
-use crate::core::error::{AppError, AppResult};
+use crate::core::error::{ApiError, ApiResult};
 
 pub mod extractors;
 
 const OTP_ALLOWED_VALUES: [u8; 10] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-pub fn hash_password(password: &str) -> AppResult<String> {
+pub fn hash_password(password: &str) -> ApiResult<String> {
     let argon2 = Argon2::default();
     let salt = SaltString::generate(&mut OsRng);
     argon2
         .hash_password(password.as_bytes(), &salt)
         .map(|hash| hash.to_string())
-        .map_err(AppError::from)
+        .map_err(ApiError::from)
 }
 
 pub fn generate_otp(length: usize) -> String {

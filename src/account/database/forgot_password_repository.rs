@@ -5,7 +5,7 @@ use crate::{
         CreateForgotPasswordTransactionEntity, VerifyForgotPasswordTransaction,
     },
     core::{
-        error::{AppError, AppResult},
+        error::{ApiError, ApiResult},
         types::DbDateTime,
     },
 };
@@ -13,7 +13,7 @@ use crate::{
 pub async fn request_otp(
     connection: &mut SqliteConnection,
     transaction: CreateForgotPasswordTransactionEntity,
-) -> AppResult<String> {
+) -> ApiResult<String> {
     sqlx::query!(
         "
         INSERT INTO forgot_password_transactions
@@ -30,13 +30,13 @@ pub async fn request_otp(
     .fetch_one(connection)
     .await
     .map(|result| result.token)
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }
 
 pub async fn verify_otp_request(
     connection: &mut SqliteConnection,
     transaction: VerifyForgotPasswordTransaction,
-) -> AppResult<Option<String>> {
+) -> ApiResult<Option<String>> {
     let now = DbDateTime::now();
     sqlx::query!(
         "
@@ -57,13 +57,13 @@ pub async fn verify_otp_request(
     .fetch_optional(connection)
     .await
     .map(|result| result.map(|result| result.reset_password_token))
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }
 
 pub async fn consume_otp_request(
     connection: &mut SqliteConnection,
     token: &str,
-) -> AppResult<Option<i64>> {
+) -> ApiResult<Option<i64>> {
     let now = DbDateTime::now();
     sqlx::query!(
         "
@@ -82,5 +82,5 @@ pub async fn consume_otp_request(
     .fetch_optional(connection)
     .await
     .map(|result| result.map(|result| result.user_id))
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }

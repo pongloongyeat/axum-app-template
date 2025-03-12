@@ -23,7 +23,7 @@ pub mod admin {
             utils::extractors::{Admin, CurrentRole},
         },
         core::{
-            error::{AppError, AppResult},
+            error::{ApiResult, ApiError},
             extractors::JsonResponse,
             models::{Page, PageRequest},
             AppState,
@@ -35,8 +35,8 @@ pub mod admin {
         State(state): State<AppState>,
         CurrentRole(_): CurrentRole<Admin>,
         Query(request): Query<PageRequest>,
-    ) -> AppResult<JsonResponse<Page<UserResponse>>> {
-        let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
+    ) -> ApiResult<JsonResponse<Page<UserResponse>>> {
+        let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
         user_repository::find_paginated_users(&mut connection, request)
             .await
             .map(|users| users.map(|user| user.to_owned().into()))

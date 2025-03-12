@@ -3,7 +3,7 @@ use sqlx::SqliteConnection;
 use crate::{
     account::entities::session::{CreateSessionEntity, RevocationReason, SessionEntity},
     core::{
-        error::{AppError, AppResult},
+        error::{ApiError, ApiResult},
         types::DbDateTime,
     },
 };
@@ -11,7 +11,7 @@ use crate::{
 pub async fn find_session_by_token_ignoring_expiration(
     connection: &mut SqliteConnection,
     token: &str,
-) -> AppResult<Option<SessionEntity>> {
+) -> ApiResult<Option<SessionEntity>> {
     let now = DbDateTime::now();
     sqlx::query_as!(
         SessionEntity,
@@ -35,14 +35,14 @@ pub async fn find_session_by_token_ignoring_expiration(
     )
     .fetch_optional(connection)
     .await
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }
 
 pub async fn revoke_session_for_user_id(
     connection: &mut SqliteConnection,
     user_id: i64,
     reason: RevocationReason,
-) -> AppResult<()> {
+) -> ApiResult<()> {
     let now = DbDateTime::now();
     sqlx::query!(
         "
@@ -60,14 +60,14 @@ pub async fn revoke_session_for_user_id(
     .execute(connection)
     .await
     .map(|_| ())
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }
 
 pub async fn create_session(
     connection: &mut SqliteConnection,
     user_id: i64,
     session: CreateSessionEntity,
-) -> AppResult<SessionEntity> {
+) -> ApiResult<SessionEntity> {
     sqlx::query_as!(
         SessionEntity,
         r#"
@@ -97,5 +97,5 @@ pub async fn create_session(
     )
     .fetch_one(connection)
     .await
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }

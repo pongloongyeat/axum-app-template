@@ -4,10 +4,10 @@ use schemars::JsonSchema;
 use serde::Serialize;
 use thiserror::Error;
 
-pub type AppResult<T> = Result<T, AppError>;
+pub type ApiResult<T> = Result<T, ApiError>;
 
 #[derive(Error, Debug)]
-pub enum AppError {
+pub enum ApiError {
     #[error("An unknown error has occured.")]
     SqlxError(#[from] sqlx::error::Error),
 
@@ -31,85 +31,85 @@ pub trait ErrorCode {
     fn code(&self) -> &str;
 }
 
-impl From<argon2::password_hash::Error> for AppError {
+impl From<argon2::password_hash::Error> for ApiError {
     fn from(value: argon2::password_hash::Error) -> Self {
-        AppError::Argon2PasswordHashError(value)
+        ApiError::Argon2PasswordHashError(value)
     }
 }
 
-impl From<Vec<crate::core::validators::ValidationError>> for AppError {
+impl From<Vec<crate::core::validators::ValidationError>> for ApiError {
     fn from(value: Vec<crate::core::validators::ValidationError>) -> Self {
-        AppError::ValidationError(value)
+        ApiError::ValidationError(value)
     }
 }
 
-impl ErrorCode for AppError {
+impl ErrorCode for ApiError {
     fn code(&self) -> &str {
         match self {
-            AppError::SqlxError(_) => "GBL9999",
-            AppError::Argon2PasswordHashError(_) => "GBL9998",
-            AppError::HeaderToStrError(_) => "GBL0001",
-            AppError::JsonDeserializeError(_) => "GBL0002",
-            AppError::ValidationError(_) => "GBL0003",
-            AppError::AccountError(error) => error.code(),
+            ApiError::SqlxError(_) => "GBL9999",
+            ApiError::Argon2PasswordHashError(_) => "GBL9998",
+            ApiError::HeaderToStrError(_) => "GBL0001",
+            ApiError::JsonDeserializeError(_) => "GBL0002",
+            ApiError::ValidationError(_) => "GBL0003",
+            ApiError::AccountError(error) => error.code(),
         }
     }
 }
 
-impl IntoResponse for AppError {
+impl IntoResponse for ApiError {
     fn into_response(self) -> axum::response::Response {
         match &self {
-            AppError::SqlxError(error) => AppErrorResponse {
+            ApiError::SqlxError(error) => ApiErrorResponse {
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: Some(error.to_string()),
                 validation_errors: vec![],
             },
-            AppError::Argon2PasswordHashError(error) => AppErrorResponse {
+            ApiError::Argon2PasswordHashError(error) => ApiErrorResponse {
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: Some(error.to_string()),
                 validation_errors: vec![],
             },
-            AppError::HeaderToStrError(error) => AppErrorResponse {
+            ApiError::HeaderToStrError(error) => ApiErrorResponse {
                 status_code: StatusCode::BAD_REQUEST,
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: Some(error.to_string()),
                 validation_errors: vec![],
             },
-            AppError::JsonDeserializeError(error) => AppErrorResponse {
+            ApiError::JsonDeserializeError(error) => ApiErrorResponse {
                 status_code: error.status(),
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: Some(error.to_string()),
                 validation_errors: vec![],
             },
-            AppError::ValidationError(errors) => AppErrorResponse {
+            ApiError::ValidationError(errors) => ApiErrorResponse {
                 status_code: StatusCode::BAD_REQUEST,
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: None,
                 validation_errors: AppValidationErrorResponse::from_errors(errors),
             },
-            AppError::AccountError(error) => error.into_app_error_response(),
+            ApiError::AccountError(error) => error.into_app_error_response(),
         }
         .into_response()
     }
 }
 
-impl OperationOutput for AppError {
+impl OperationOutput for ApiError {
     type Inner = Self;
 }
 
-pub trait IntoAppErrorResponse {
-    fn into_app_error_response(&self) -> AppErrorResponse;
+pub trait IntoApiErrorResponse {
+    fn into_app_error_response(&self) -> ApiErrorResponse;
 }
 
 #[derive(Serialize, JsonSchema)]
-pub struct AppErrorResponse {
+pub struct ApiErrorResponse {
     #[serde(skip_serializing)]
     #[schemars(skip)]
     pub status_code: StatusCode,
@@ -144,7 +144,7 @@ impl AppValidationErrorResponse {
     }
 }
 
-impl IntoResponse for AppErrorResponse {
+impl IntoResponse for ApiErrorResponse {
     fn into_response(self) -> axum::response::Response {
         (self.status_code, Json(self)).into_response()
     }

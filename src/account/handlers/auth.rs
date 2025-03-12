@@ -15,7 +15,7 @@ use crate::{
         utils::extractors::{CurrentUser, PossiblyExpiredSession},
     },
     core::{
-        error::{AppError, AppResult},
+        error::{ApiError, AppResult},
         extractors::{JsonRequest, JsonResponse, ValidJsonRequest},
         types::DbDateTime,
         AppState,
@@ -28,10 +28,10 @@ pub async fn register(
     ValidJsonRequest(request): ValidJsonRequest<CreateUserRequest>,
 ) -> AppResult<JsonResponse<UserResponse>> {
     let email = request.email;
-    let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
+    let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
 
     if user_repository::user_exists_by_email(&mut connection, &email).await? {
-        return Err(AppError::AccountError(AccountError::UserExistsByEmail(
+        return Err(ApiError::AccountError(AccountError::UserExistsByEmail(
             email,
         )));
     }
@@ -55,11 +55,11 @@ pub async fn login(
     State(state): State<AppState>,
     ValidJsonRequest(request): ValidJsonRequest<AuthenticateRequest>,
 ) -> AppResult<JsonResponse<AuthenticatedResponse>> {
-    let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
+    let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
     let email = request.email;
 
     let Some(user) = user_repository::find_user_by_email(&mut connection, &email).await? else {
-        return Err(AppError::AccountError(
+        return Err(ApiError::AccountError(
             AccountError::UserDoesNotExistByEmail(email),
         ));
     };
@@ -68,7 +68,7 @@ pub async fn login(
     let result = validators::validate_user_password(&request.password, &user.password).await;
 
     if let Err(error) = result {
-        if let AppError::AccountError(account_error) = &error {
+        if let ApiError::AccountError(account_error) = &error {
             if account_error.is_invalid_credentials() {
                 let failed_login_attempt = FailedLoginAttempt {
                     login_attempts: user.login_attempts + 1,
@@ -88,7 +88,7 @@ pub async fn login(
     }
 
     let new_session = CreateSessionEntity::new(state.config);
-    let mut connection = state.pool.begin().await.map_err(AppError::from)?;
+    let mut connection = state.pool.begin().await.map_err(ApiError::from)?;
 
     session_repository::revoke_session_for_user_id(
         &mut connection,
@@ -98,7 +98,7 @@ pub async fn login(
     .await?;
     let session = session_repository::create_session(&mut connection, user.id, new_session).await?;
 
-    connection.commit().await.map_err(AppError::from)?;
+    connection.commit().await.map_err(ApiError::from)?;
 
     Ok(JsonResponse(AuthenticatedResponse {
         session_token: session.token,
@@ -116,14 +116,14 @@ pub async fn extend_session(
     JsonRequest(request): JsonRequest<ExtendSessionRequest>,
 ) -> AppResult<JsonResponse<AuthenticatedResponse>> {
     if session.refresh_token != request.refresh_token {
-        return Err(AppError::AccountError(AccountError::TokenPairMismatch));
+        return Err(ApiError::AccountError(AccountError::TokenPairMismatch));
     }
 
     let new_session = CreateSessionEntity::new(state.config);
-    let mut connection = state.pool.begin().await.map_err(AppError::from)?;
+    let mut connection = state.pool.begin().await.map_err(ApiError::from)?;
     let Some(user) = user_repository::find_user_by_id(&mut connection, session.user_id).await?
     else {
-        return Err(AppError::AccountError(AccountError::UserDoesNotExistById(
+        return Err(ApiError::AccountError(AccountError::UserDoesNotExistById(
             session.user_id,
         )));
     };
@@ -137,7 +137,7 @@ pub async fn extend_session(
     let session =
         session_repository::create_session(&mut connection, session.user_id, new_session).await?;
 
-    connection.commit().await.map_err(AppError::from)?;
+    connection.commit().await.map_err(ApiError::from)?;
 
     Ok(JsonResponse(AuthenticatedResponse {
         session_token: session.token,
@@ -153,7 +153,7 @@ pub async fn logout(
     State(state): State<AppState>,
     CurrentUser(user): CurrentUser,
 ) -> AppResult<NoContent> {
-    let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
+    let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
 
     session_repository::revoke_session_for_user_id(
         &mut connection,
@@ -170,20 +170,20 @@ mod validators {
 
     use crate::{
         account::{entities::user::UserEntity, error::AccountError},
-        core::error::{AppError, AppResult},
+        core::error::{ApiError, AppResult},
     };
 
     pub async fn validate_user_password(password: &str, user_password: &str) -> AppResult<()> {
         let argon2 = Argon2::default();
-        let hash = PasswordHash::new(user_password).map_err(AppError::from)?;
+        let hash = PasswordHash::new(user_password).map_err(ApiError::from)?;
 
         argon2
             .verify_password(password.as_bytes(), &hash)
             .map_err(|error| match error {
                 argon2::password_hash::Error::Password => {
-                    AppError::AccountError(AccountError::InvalidCredentials)
+                    ApiError::AccountError(AccountError::InvalidCredentials)
                 }
-                _ => AppError::Argon2PasswordHashError(error),
+                _ => ApiError::Argon2PasswordHashError(error),
             })?;
 
         Ok(())
@@ -191,7 +191,7 @@ mod validators {
 
     pub fn validate_max_login_attempts(user: &UserEntity) -> AppResult<()> {
         if user.login_attempts >= 3 {
-            Err(AppError::AccountError(AccountError::MaxLoginAttempts))
+            Err(ApiError::AccountError(AccountError::MaxLoginAttempts))
         } else {
             Ok(())
         }

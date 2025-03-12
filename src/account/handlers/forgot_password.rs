@@ -13,7 +13,7 @@ use crate::{
         },
     },
     core::{
-        error::{AppError, AppResult},
+        error::{ApiError, ApiResult},
         extractors::{JsonRequest, JsonResponse, ValidJsonRequest},
         AppState,
     },
@@ -23,14 +23,14 @@ use crate::{
 pub async fn request_otp(
     State(state): State<AppState>,
     JsonRequest(request): JsonRequest<RequestOtpRequest>,
-) -> AppResult<()> {
-    let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
+) -> ApiResult<()> {
+    let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
     let email = request.email;
     let Some(user_id) = user_repository::find_user_by_email(&mut connection, &email)
         .await?
         .map(|u| u.id)
     else {
-        return Err(AppError::AccountError(
+        return Err(ApiError::AccountError(
             AccountError::UserDoesNotExistByEmail(email),
         ));
     };
@@ -45,16 +45,16 @@ pub async fn request_otp(
 pub async fn verify_otp(
     State(state): State<AppState>,
     JsonRequest(request): JsonRequest<VerifyOtpRequest>,
-) -> AppResult<JsonResponse<VerifyOtpResponse>> {
+) -> ApiResult<JsonResponse<VerifyOtpResponse>> {
     let email = request.email;
     let token = request.otp;
 
-    let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
+    let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
     let Some(user_id) = user_repository::find_user_by_email(&mut connection, &email)
         .await?
         .map(|u| u.id)
     else {
-        return Err(AppError::AccountError(
+        return Err(ApiError::AccountError(
             AccountError::UserDoesNotExistByEmail(email),
         ));
     };
@@ -67,7 +67,7 @@ pub async fn verify_otp(
             token: verification_token,
         }))
     } else {
-        Err(AppError::AccountError(AccountError::InvalidOrExpiredOtp))
+        Err(ApiError::AccountError(AccountError::InvalidOrExpiredOtp))
     }
 }
 
@@ -75,21 +75,21 @@ pub async fn verify_otp(
 pub async fn reset_password(
     State(state): State<AppState>,
     ValidJsonRequest(request): ValidJsonRequest<ResetPasswordRequest>,
-) -> AppResult<NoContent> {
+) -> ApiResult<NoContent> {
     let token = request.token;
     let password = request.password;
     let hash = crate::account::utils::hash_password(&password)?;
 
-    let mut connection = state.pool.begin().await.map_err(AppError::from)?;
+    let mut connection = state.pool.begin().await.map_err(ApiError::from)?;
 
     if let Some(user_id) =
         forgot_password_repository::consume_otp_request(&mut connection, &token).await?
     {
         user_repository::update_password_by_user_id(&mut connection, user_id, &hash).await?;
-        connection.commit().await.map_err(AppError::from)?;
+        connection.commit().await.map_err(ApiError::from)?;
         Ok(NoContent)
     } else {
-        connection.commit().await.map_err(AppError::from)?;
-        Err(AppError::AccountError(AccountError::InvalidOrExpiredOtp))
+        connection.commit().await.map_err(ApiError::from)?;
+        Err(ApiError::AccountError(AccountError::InvalidOrExpiredOtp))
     }
 }

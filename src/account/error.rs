@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::core::{
     constants::session::headers::SESSION_HEADER_KEY,
-    error::{AppErrorResponse, ErrorCode, IntoAppErrorResponse},
+    error::{ApiErrorResponse, ErrorCode, IntoApiErrorResponse},
 };
 
 #[derive(Error, Debug, EnumIs)]
@@ -57,13 +57,13 @@ impl ErrorCode for AccountError {
     }
 }
 
-impl IntoAppErrorResponse for AccountError {
-    fn into_app_error_response(&self) -> AppErrorResponse {
+impl IntoApiErrorResponse for AccountError {
+    fn into_app_error_response(&self) -> ApiErrorResponse {
         match &self {
             AccountError::UserExistsByEmail(_)
             | AccountError::InvalidCredentials
             | AccountError::MaxLoginAttempts
-            | AccountError::InvalidOrExpiredOtp => AppErrorResponse {
+            | AccountError::InvalidOrExpiredOtp => ApiErrorResponse {
                 status_code: StatusCode::BAD_REQUEST,
                 code: self.code().into(),
                 message: self.to_string(),
@@ -71,7 +71,7 @@ impl IntoAppErrorResponse for AccountError {
                 validation_errors: vec![],
             },
             AccountError::UserDoesNotExistByEmail(_) | AccountError::UserDoesNotExistById(_) => {
-                AppErrorResponse {
+                ApiErrorResponse {
                     status_code: StatusCode::NOT_FOUND,
                     code: self.code().into(),
                     message: self.to_string(),
@@ -79,7 +79,7 @@ impl IntoAppErrorResponse for AccountError {
                     validation_errors: vec![],
                 }
             }
-            AccountError::MissingTokenInHeader => AppErrorResponse {
+            AccountError::MissingTokenInHeader => ApiErrorResponse {
                 status_code: StatusCode::UNAUTHORIZED,
                 code: self.code().into(),
                 message: self.to_string(),
@@ -89,21 +89,21 @@ impl IntoAppErrorResponse for AccountError {
                 )),
                 validation_errors: vec![],
             },
-            AccountError::InvalidOrExpiredToken => AppErrorResponse {
+            AccountError::InvalidOrExpiredToken => ApiErrorResponse {
                 status_code: StatusCode::UNAUTHORIZED,
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: None,
                 validation_errors: vec![],
             },
-            AccountError::TokenPairMismatch => AppErrorResponse {
+            AccountError::TokenPairMismatch => ApiErrorResponse {
                 status_code: StatusCode::UNAUTHORIZED,
                 code: self.code().into(),
                 message: self.to_string(),
                 debug_description: None,
                 validation_errors: vec![],
             },
-            AccountError::InsufficientPrivilege => AppErrorResponse {
+            AccountError::InsufficientPrivilege => ApiErrorResponse {
                 status_code: StatusCode::FORBIDDEN,
                 code: self.code().into(),
                 message: self.to_string(),

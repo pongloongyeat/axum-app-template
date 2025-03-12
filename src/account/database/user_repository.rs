@@ -3,7 +3,7 @@ use sqlx::SqliteConnection;
 use crate::{
     account::entities::user::{CreateUserEntity, FailedLoginAttempt, UserEntity, UserRole},
     core::{
-        error::{AppError, AppResult},
+        error::{ApiError, ApiResult},
         models::{Page, PageRequest},
         types::DbDateTime,
     },
@@ -12,7 +12,7 @@ use crate::{
 pub async fn find_user_by_id(
     connection: &mut SqliteConnection,
     id: i64,
-) -> AppResult<Option<UserEntity>> {
+) -> ApiResult<Option<UserEntity>> {
     sqlx::query_as!(
         UserEntity,
         r#"
@@ -30,13 +30,13 @@ pub async fn find_user_by_id(
     )
     .fetch_optional(connection)
     .await
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }
 
 pub async fn find_user_by_email(
     connection: &mut SqliteConnection,
     email: &str,
-) -> AppResult<Option<UserEntity>> {
+) -> ApiResult<Option<UserEntity>> {
     sqlx::query_as!(
         UserEntity,
         r#"
@@ -54,13 +54,13 @@ pub async fn find_user_by_email(
     )
     .fetch_optional(connection)
     .await
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }
 
 pub async fn find_user_by_token(
     connection: &mut SqliteConnection,
     token: &str,
-) -> AppResult<Option<UserEntity>> {
+) -> ApiResult<Option<UserEntity>> {
     let now = DbDateTime::now();
     sqlx::query_as!(
         UserEntity,
@@ -83,13 +83,13 @@ pub async fn find_user_by_token(
     )
     .fetch_optional(connection)
     .await
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }
 
 pub async fn find_paginated_users(
     connection: &mut SqliteConnection,
     request: PageRequest,
-) -> AppResult<Page<UserEntity>> {
+) -> ApiResult<Page<UserEntity>> {
     let take = request.take as i64;
     let skip = request.skip as i64;
     let users = sqlx::query_as!(
@@ -111,13 +111,13 @@ pub async fn find_paginated_users(
     )
     .fetch_all(&mut *connection)
     .await
-    .map_err(AppError::from)?;
+    .map_err(ApiError::from)?;
 
     let count = sqlx::query!("SELECT COUNT(1) as count FROM users")
         .fetch_one(connection)
         .await
         .map(|result| result.count as u64)
-        .map_err(AppError::from)?;
+        .map_err(ApiError::from)?;
 
     Ok(Page::new(users, count, request))
 }
@@ -125,7 +125,7 @@ pub async fn find_paginated_users(
 pub async fn user_exists_by_email(
     connection: &mut SqliteConnection,
     email: &str,
-) -> AppResult<bool> {
+) -> ApiResult<bool> {
     sqlx::query!(
         "SELECT COUNT(1) as count FROM users u WHERE u.email = ?",
         email
@@ -133,13 +133,13 @@ pub async fn user_exists_by_email(
     .fetch_one(connection)
     .await
     .map(|result| result.count > 0)
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }
 
 pub async fn create_user(
     connection: &mut SqliteConnection,
     user: CreateUserEntity,
-) -> AppResult<UserEntity> {
+) -> ApiResult<UserEntity> {
     sqlx::query_as!(
         UserEntity,
         r#"
@@ -158,14 +158,14 @@ pub async fn create_user(
     )
     .fetch_one(connection)
     .await
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }
 
 pub async fn update_failed_login(
     connection: &mut SqliteConnection,
     id: i64,
     failed_login_attempt: FailedLoginAttempt,
-) -> AppResult<()> {
+) -> ApiResult<()> {
     sqlx::query!(
         "
         UPDATE users
@@ -179,14 +179,14 @@ pub async fn update_failed_login(
     .execute(connection)
     .await
     .map(|_| ())
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }
 
 pub async fn update_password_by_user_id(
     connection: &mut SqliteConnection,
     user_id: i64,
     password: &str,
-) -> AppResult<()> {
+) -> ApiResult<()> {
     sqlx::query!(
         "UPDATE users SET password = ?, login_attempts = 0 WHERE id = ?",
         password,
@@ -195,5 +195,5 @@ pub async fn update_password_by_user_id(
     .execute(connection)
     .await
     .map(|_| ())
-    .map_err(AppError::from)
+    .map_err(ApiError::from)
 }

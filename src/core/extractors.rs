@@ -3,7 +3,7 @@ use axum::{extract::FromRequest, response::IntoResponse, Json};
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Serialize};
 
-use super::{error::AppError, validators::Validatable};
+use super::{error::ApiError, validators::Validatable};
 
 pub struct JsonRequest<T>(pub T);
 
@@ -12,13 +12,13 @@ where
     T: DeserializeOwned,
     S: Send + Sync,
 {
-    type Rejection = AppError;
+    type Rejection = ApiError;
 
     async fn from_request(req: axum::extract::Request, state: &S) -> Result<Self, Self::Rejection> {
         <Json<T> as FromRequest<S>>::from_request(req, state)
             .await
             .map(|json| JsonRequest(json.0))
-            .map_err(AppError::from)
+            .map_err(ApiError::from)
     }
 }
 
@@ -41,14 +41,14 @@ where
     T: Validatable + DeserializeOwned,
     S: Send + Sync,
 {
-    type Rejection = AppError;
+    type Rejection = ApiError;
 
     async fn from_request(req: axum::extract::Request, state: &S) -> Result<Self, Self::Rejection> {
         let json = <Json<T> as FromRequest<S>>::from_request(req, state)
             .await
             .map(|json| json.0)
-            .map_err(AppError::from)?;
-        json.validate().map_err(AppError::from)?;
+            .map_err(ApiError::from)?;
+        json.validate().map_err(ApiError::from)?;
 
         Ok(ValidJsonRequest(json))
     }

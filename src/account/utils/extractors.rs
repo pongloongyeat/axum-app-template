@@ -10,24 +10,24 @@ use crate::{
         },
         error::AccountError,
     },
-    core::{constants::session::headers::SESSION_HEADER_KEY, error::AppError, AppState},
+    core::{constants::session::headers::SESSION_HEADER_KEY, error::ApiError, AppState},
 };
 
 pub struct PossiblyExpiredSession(pub SessionEntity);
 
 impl FromRequestParts<AppState> for PossiblyExpiredSession {
-    type Rejection = AppError;
+    type Rejection = ApiError;
 
     async fn from_request_parts(
         parts: &mut axum::http::request::Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let Some(session_id) = parts.headers.get(SESSION_HEADER_KEY) else {
-            return Err(AppError::AccountError(AccountError::MissingTokenInHeader));
+            return Err(ApiError::AccountError(AccountError::MissingTokenInHeader));
         };
 
-        let token = session_id.to_str().map_err(AppError::from)?;
-        let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
+        let token = session_id.to_str().map_err(ApiError::from)?;
+        let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
 
         if let Some(session) =
             session_repository::find_session_by_token_ignoring_expiration(&mut connection, token)
@@ -35,7 +35,7 @@ impl FromRequestParts<AppState> for PossiblyExpiredSession {
         {
             Ok(Self(session))
         } else {
-            Err(AppError::AccountError(AccountError::InvalidOrExpiredToken))
+            Err(ApiError::AccountError(AccountError::InvalidOrExpiredToken))
         }
     }
 }
@@ -45,23 +45,23 @@ impl OperationInput for PossiblyExpiredSession {}
 pub struct CurrentUser(pub UserEntity);
 
 impl FromRequestParts<AppState> for CurrentUser {
-    type Rejection = AppError;
+    type Rejection = ApiError;
 
     async fn from_request_parts(
         parts: &mut axum::http::request::Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let Some(session_id) = parts.headers.get(SESSION_HEADER_KEY) else {
-            return Err(AppError::AccountError(AccountError::MissingTokenInHeader));
+            return Err(ApiError::AccountError(AccountError::MissingTokenInHeader));
         };
 
-        let token = session_id.to_str().map_err(AppError::from)?;
-        let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
+        let token = session_id.to_str().map_err(ApiError::from)?;
+        let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
 
         if let Some(user) = user_repository::find_user_by_token(&mut connection, token).await? {
             Ok(Self(user))
         } else {
-            Err(AppError::AccountError(AccountError::InvalidOrExpiredToken))
+            Err(ApiError::AccountError(AccountError::InvalidOrExpiredToken))
         }
     }
 }
@@ -80,28 +80,28 @@ impl<T> FromRequestParts<AppState> for CurrentRole<T>
 where
     T: Role,
 {
-    type Rejection = AppError;
+    type Rejection = ApiError;
 
     async fn from_request_parts(
         parts: &mut axum::http::request::Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let Some(session_id) = parts.headers.get(SESSION_HEADER_KEY) else {
-            return Err(AppError::AccountError(AccountError::MissingTokenInHeader));
+            return Err(ApiError::AccountError(AccountError::MissingTokenInHeader));
         };
 
-        let token = session_id.to_str().map_err(AppError::from)?;
-        let mut connection = state.pool.acquire().await.map_err(AppError::from)?;
+        let token = session_id.to_str().map_err(ApiError::from)?;
+        let mut connection = state.pool.acquire().await.map_err(ApiError::from)?;
 
         let Some(user) = user_repository::find_user_by_token(&mut connection, token).await? else {
-            return Err(AppError::AccountError(AccountError::InvalidOrExpiredToken));
+            return Err(ApiError::AccountError(AccountError::InvalidOrExpiredToken));
         };
 
         let role = user.role;
         if role == T::role() {
             Ok(CurrentRole(T::get_self()))
         } else {
-            Err(AppError::AccountError(AccountError::InsufficientPrivilege))
+            Err(ApiError::AccountError(AccountError::InsufficientPrivilege))
         }
     }
 }
