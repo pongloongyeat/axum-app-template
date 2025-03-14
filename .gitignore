@@ -1,5 +1,5 @@
-/target
+**/target
 
-db.sqlite
-db.sqlite-shm
-db.sqlite-wal
+**/db.sqlite
+**/db.sqlite-shm
+**/db.sqlite-wal
