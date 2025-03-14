@@ -1,4 +1,4 @@
-use sqlx::prelude::Type;
+use sqlx::{FromRow, Type};
 
 use crate::core::types::DbDateTime;
 
@@ -8,7 +8,7 @@ pub enum UserRole {
     Admin,
 }
 
-#[derive(Clone)]
+#[derive(FromRow, Clone)]
 pub struct UserEntity {
     pub id: i64,
     pub email: String,

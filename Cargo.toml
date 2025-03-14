@@ -4,9 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-aide = { version = "0.14.1", features = ["axum", "axum-json", "axum-query", "swagger"] }
+aide = { version = "0.14.1", features = ["axum", "axum-extra-query", "axum-json", "axum-query", "swagger"] }
 argon2 = "0.5.3"
 axum = { version = "0.8.1", features = ["macros", "tracing"] }
+axum-extra = { version = "0.10.0", features = ["query"] }
 chrono = { version = "0.4.40", features = ["serde"] }
 derive-getters = "0.5.0"
 dotenvy = "0.15.7"

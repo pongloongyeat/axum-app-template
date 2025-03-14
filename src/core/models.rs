@@ -8,13 +8,75 @@ pub struct PageRequest {
     pub skip: u64,
 
     #[serde(default)]
-    pub sort: Vec<SortingOrder>,
+    pub sort: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, JsonSchema)]
+impl PageRequest {
+    pub fn to_sql_string(&self, sql: &str) -> String {
+        let mut sql = sql.to_string();
+
+        let sort = self
+            .sort
+            .iter()
+            .map(SortingOrder::from)
+            .filter(|order| order != &SortingOrder::NoOrder)
+            .filter_map(|order| order.to_sql_string())
+            .collect::<Vec<String>>()
+            .join(", ");
+        if !sort.is_empty() {
+            let sort = format!("ORDER BY {sort}\n");
+            sql.push_str(&sort);
+        }
+
+        let limit = self.take;
+        let offset = self.skip;
+        sql.push_str(format!("LIMIT {limit} OFFSET {offset}").as_str());
+
+        sql
+    }
+}
+
+#[derive(PartialEq)]
 pub enum SortingOrder {
     Ascending(String),
     Descending(String),
+    NoOrder,
+}
+
+impl<T> From<T> for SortingOrder
+where
+    T: Into<String>,
+{
+    fn from(value: T) -> Self {
+        let value: String = value.into();
+        if let Some((key, order)) = value.split_once(",") {
+            let key = key.trim().to_string();
+            let order = <&str as Into<String>>::into(order).to_lowercase();
+            let order = order.trim();
+
+            match order {
+                "asc" | "ascending" => Self::Ascending(key),
+                "desc" | "dsc" | "descending" => Self::Descending(key),
+                _ => {
+                    tracing::warn!("Unable to determine sorting order: {value}. Skipping");
+                    Self::NoOrder
+                }
+            }
+        } else {
+            tracing::warn!("Unable to deserialize sorting order: {value}. Skipping");
+            Self::NoOrder
+        }
+    }
+}
+
+impl SortingOrder {
+    pub fn to_sql_string(&self) -> Option<String> {
+        match self {
+            SortingOrder::Ascending(key) => Some(format!("{key} ASC")),
+            SortingOrder::Descending(key) => Some(format!("{key} DESC")),
+            SortingOrder::NoOrder => None,
+        }
+    }
 }
 
 #[derive(Serialize, JsonSchema)]

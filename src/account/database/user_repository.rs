@@ -1,4 +1,4 @@
-use sqlx::SqliteConnection;
+use sqlx::{Sqlite, SqliteConnection};
 
 use crate::{
     account::entities::user::{CreateUserEntity, FailedLoginAttempt, UserEntity, UserRole},
@@ -90,28 +90,23 @@ pub async fn find_paginated_users(
     connection: &mut SqliteConnection,
     request: PageRequest,
 ) -> ApiResult<Page<UserEntity>> {
-    let take = request.take as i64;
-    let skip = request.skip as i64;
-    let users = sqlx::query_as!(
-        UserEntity,
+    let sql = request.to_sql_string(
         r#"
         SELECT
             u.id,
             u.email,
             u.password,
-            u.role as "role!: UserRole",
+            u.role,
             u.login_attempts,
-            u.last_failed_login_attempt as "last_failed_login_attempt!: Option<DbDateTime>"
+            u.last_failed_login_attempt
         FROM users u
-        LIMIT ?
-        OFFSET ?
         "#,
-        take,
-        skip,
-    )
-    .fetch_all(&mut *connection)
-    .await
-    .map_err(ApiError::from)?;
+    );
+
+    let users = sqlx::query_as::<Sqlite, UserEntity>(&sql)
+        .fetch_all(&mut *connection)
+        .await
+        .map_err(ApiError::from)?;
 
     let count = sqlx::query!("SELECT COUNT(1) as count FROM users")
         .fetch_one(connection)

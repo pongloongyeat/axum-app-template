@@ -13,7 +13,8 @@ pub async fn get_current_user(
 }
 
 pub mod admin {
-    use axum::extract::{Query, State};
+    use axum::extract::State;
+    use axum_extra::extract::Query;
 
     use crate::{
         account::{
