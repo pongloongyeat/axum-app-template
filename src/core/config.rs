@@ -7,14 +7,15 @@ use std::{
 
 use chrono::Duration;
 use strum::{Display, EnumIs, EnumString};
-use tracing::log::LevelFilter;
 
 #[derive(Clone)]
 pub struct AppConfig {
     pub host: String,
     pub port: String,
     pub db_url: String,
-    pub sql_log_level: LevelFilter,
+    pub show_sql: bool,
+
+    // TODO: Logging
     pub status_code_range_for_error_logging: Range<u16>,
     pub session_duration: Duration,
     pub session_refresh_duration: Duration,
@@ -35,7 +36,7 @@ impl AppConfig {
         let port = get_env("PORT");
 
         let db_url = get_env("DATABASE_URL");
-        let sql_log_level = get_env("SQL_LOG_LEVEL");
+        let show_sql = get_env("SHOW_SQL");
 
         let status_code_range_for_error_logging = get_range("STATUS_CODE_RANGE_FOR_ERROR_LOGGING");
 
@@ -52,7 +53,7 @@ impl AppConfig {
             host,
             port,
             db_url,
-            sql_log_level,
+            show_sql,
             status_code_range_for_error_logging,
             session_duration,
             session_refresh_duration,

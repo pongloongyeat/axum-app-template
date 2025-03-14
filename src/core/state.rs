@@ -16,10 +16,13 @@ pub struct AppState {
 impl AppState {
     pub async fn new(config: AppConfig) -> Self {
         let db_url = config.clone().db_url;
-        let options = SqliteConnectOptions::from_str(&db_url)
+        let mut options = SqliteConnectOptions::from_str(&db_url)
             .unwrap()
-            // TODO: It ain't working
-            .log_statements(config.sql_log_level);
+            .log_statements(tracing::log::LevelFilter::Debug);
+
+        if !config.show_sql {
+            options = options.disable_statement_logging();
+        }
 
         let pool = SqlitePoolOptions::new()
             .connect_with(options)
