@@ -1,7 +1,8 @@
 use schemars::JsonSchema;
 use serde::Deserialize;
+use shared::traits::Validatable;
 
-use crate::core::validators::{self, Validatable};
+use crate::core::validators::{self};
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]

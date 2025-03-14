@@ -21,7 +21,7 @@ pub enum ApiError {
     JsonDeserializeError(#[from] axum::extract::rejection::JsonRejection),
 
     #[error("One or more validation errors has occured.")]
-    ValidationError(Vec<crate::core::validators::ValidationError>),
+    ValidationError(Vec<shared::traits::ValidationError>),
 
     #[error(transparent)]
     AccountError(#[from] crate::account::error::AccountError),
@@ -37,8 +37,8 @@ impl From<argon2::password_hash::Error> for ApiError {
     }
 }
 
-impl From<Vec<crate::core::validators::ValidationError>> for ApiError {
-    fn from(value: Vec<crate::core::validators::ValidationError>) -> Self {
+impl From<Vec<shared::traits::ValidationError>> for ApiError {
+    fn from(value: Vec<shared::traits::ValidationError>) -> Self {
         ApiError::ValidationError(value)
     }
 }
@@ -129,8 +129,8 @@ pub struct AppValidationErrorResponse {
     pub errors: Vec<String>,
 }
 
-impl From<crate::core::validators::ValidationError> for AppValidationErrorResponse {
-    fn from(value: crate::core::validators::ValidationError) -> Self {
+impl From<shared::traits::ValidationError> for AppValidationErrorResponse {
+    fn from(value: shared::traits::ValidationError) -> Self {
         Self {
             property: value.property,
             errors: value.errors,
@@ -139,7 +139,7 @@ impl From<crate::core::validators::ValidationError> for AppValidationErrorRespon
 }
 
 impl AppValidationErrorResponse {
-    pub fn from_errors(errors: &Vec<crate::core::validators::ValidationError>) -> Vec<Self> {
+    pub fn from_errors(errors: &Vec<shared::traits::ValidationError>) -> Vec<Self> {
         errors.iter().map(|error| error.to_owned().into()).collect()
     }
 }

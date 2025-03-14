@@ -1,4 +1,5 @@
 use axum::{extract::State, response::NoContent};
+use shared::models::request::auth::AuthenticateRequest;
 
 use crate::{
     account::{
@@ -9,7 +10,7 @@ use crate::{
         },
         error::AccountError,
         models::{
-            request::auth::{AuthenticateRequest, CreateUserRequest, ExtendSessionRequest},
+            request::auth::{CreateUserRequest, ExtendSessionRequest},
             response::{auth::AuthenticatedResponse, user::UserResponse},
         },
         utils::extractors::{CurrentUser, PossiblyExpiredSession},

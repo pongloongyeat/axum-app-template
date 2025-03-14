@@ -2,8 +2,9 @@ use aide::{OperationInput, OperationOutput};
 use axum::{extract::FromRequest, response::IntoResponse, Json};
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Serialize};
+use shared::traits::Validatable;
 
-use super::{error::ApiError, validators::Validatable};
+use super::error::ApiError;
 
 pub struct JsonRequest<T>(pub T);
 
